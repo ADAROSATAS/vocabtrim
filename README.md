@@ -2,7 +2,7 @@
 
 用浏览器打开vocabtrim.html即可开始使用
 
-vocabtrim_telts.html是已内置三个雅思词表的版本
+vocabtrim-ielts.html是已内置三个雅思词表的版本
 
 词表格式依照、常用词表下载：
 https://github.com/kajweb/dict
