@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>词表速筛</title>
+    <style>
+      :root {
+        --black: #000;
+        --white: #fff;
+        --muted: #666;
+        --line: #000;
+        --soft-line: #cfcfcf;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+      html { background: var(--white); }
+      body {
+        margin: 0;
+        background: var(--white);
+        color: var(--black);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        text-rendering: optimizeLegibility;
+      }
+      button, input { color: inherit; font: inherit; }
+      button { -webkit-tap-highlight-color: transparent; }
+      button:focus-visible, input:focus-visible {
+        outline: 3px solid var(--black);
+        outline-offset: 4px;
+      }
+      .hidden-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .shell { min-height: 100svh; }
+      .topbar {
+        width: min(1440px, calc(100% - 48px));
+        min-height: 82px;
+        margin: 0 auto;
+        border-bottom: 2px solid var(--black);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .brand {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        font-size: 24px;
+        font-weight: 900;
+        letter-spacing: -.07em;
+        cursor: pointer;
+      }
+      .topbar-action {
+        border: 2px solid var(--black);
+        border-radius: 999px;
+        background: var(--white);
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+      }
+      .topbar-action:hover {
+        background: var(--black);
+        color: var(--white);
+        transform: translateY(-2px);
+      }
+      .page {
+        width: min(1440px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+      .list {
+        border-bottom: 2px solid var(--black);
+      }
+      .list-row {
+        min-height: 116px;
+        padding: 22px 0;
+        border-bottom: 1px solid var(--soft-line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 28px;
+      }
+      .list-row:last-child { border-bottom: 0; }
+      .list-title {
+        min-width: 0;
+      }
+      .list-title h2 {
+        max-width: 700px;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: clamp(21px, 2.2vw, 32px);
+        font-weight: 850;
+        letter-spacing: -.055em;
+      }
+      .list-name-button {
+        display: block;
+        max-width: 700px;
+        overflow: hidden;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        color: inherit;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: clamp(21px, 2.2vw, 32px);
+        font-weight: 850;
+        letter-spacing: -.055em;
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 7px;
+        transition: text-decoration-color 160ms ease, text-decoration-thickness 160ms ease;
+      }
+      .list-name-button:hover {
+        text-decoration-color: currentColor;
+        text-decoration-thickness: 3px;
+      }
+      .list-meta {
+        margin: 9px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .list-actions {
+        flex: 0 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .list-actions button {
+        min-height: 42px;
+        border: 1.5px solid var(--black);
+        border-radius: 999px;
+        background: var(--white);
+        padding: 8px 15px;
+        font-size: 13px;
+        font-weight: 750;
+        cursor: pointer;
+        transition: background 160ms ease, color 160ms ease;
+      }
+      .list-actions button:hover {
+        background: var(--black);
+        color: var(--white);
+      }
+      .list-actions .delete-action:hover {
+        border-color: #c00000;
+        background: #c00000;
+        color: var(--white);
+      }
+      .empty {
+        min-height: 60svh;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 24px;
+      }
+      .empty p {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 850;
+        letter-spacing: -.06em;
+      }
+      .empty button {
+        border: 2px solid var(--black);
+        border-radius: 999px;
+        background: var(--black);
+        color: var(--white);
+        padding: 15px 30px;
+        font-size: 16px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .workspace-page {
+        padding-bottom: 260px;
+      }
+      .workspace-top {
+        min-height: 82px;
+        border-bottom: 2px solid var(--black);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .back-button, .produce-button, .mode-button {
+        border: 0;
+        background: transparent;
+        padding: 10px 0;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 6px;
+      }
+      .back-button:hover, .produce-button:hover, .mode-button:hover {
+        text-decoration-thickness: 3px;
+      }
+      .progress-area {
+        padding: 20px 0 0;
+      }
+      .progress-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .progress-line p { margin: 0; }
+      .progress-name {
+        max-width: min(70vw, 720px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .progress-line strong {
+        color: var(--black);
+        font-size: 18px;
+        font-variant-numeric: tabular-nums;
+      }
+      .progress-track {
+        height: 5px;
+        margin-top: 12px;
+        background: #ddd;
+        overflow: hidden;
+      }
+      .progress-track span {
+        display: block;
+        height: 100%;
+        background: var(--black);
+        transition: width 160ms ease;
+      }
+      .range-wrap {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 16px;
+      }
+      .range-wrap input {
+        width: 100%;
+        height: 5px;
+        accent-color: var(--black);
+        cursor: grab;
+      }
+      .range-wrap input:active { cursor: grabbing; }
+      .word-area {
+        min-height: clamp(340px, 52vh, 600px);
+        padding: 64px 20px 48px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .word-wrap { position: relative; max-width: 100%; }
+      .word {
+        position: relative;
+        margin: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        font-size: clamp(68px, 12vw, 184px);
+        font-weight: 680;
+        line-height: .9;
+        letter-spacing: -.085em;
+        transition: color 95ms ease;
+      }
+      .word::before,
+      .word::after {
+        content: "";
+        position: absolute;
+        z-index: 1;
+        left: -3%;
+        width: 106%;
+        height: clamp(5px, .55vw, 10px);
+        border-radius: 999px;
+        background: currentColor;
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
+      .word::before {
+        top: 47%;
+      }
+      .word::after {
+        top: 58%;
+      }
+      .word.is-kept::before {
+        top: calc(100% + .08em);
+        height: clamp(4px, .42vw, 8px);
+        transform: scaleX(1);
+      }
+      .word.is-kept::after {
+        display: none;
+      }
+      .word.is-crossed {
+        color: #777;
+      }
+      .word.is-crossed::before,
+      .word.is-crossed::after {
+        transform: scaleX(1);
+      }
+      .word.is-crossed.is-animating::before,
+      .word.is-crossed.is-animating::after {
+        animation: strike-draw 85ms cubic-bezier(.76, 0, .24, 1) both;
+      }
+      .word.is-crossed.is-animating {
+        animation: gray-fade 90ms ease-out both;
+      }
+      .details-panel {
+        width: min(860px, 100%);
+        margin-top: 42px;
+        border-top: 2px solid var(--black);
+        border-bottom: 2px solid var(--black);
+        padding: 20px 0 16px;
+        text-align: left;
+        animation: details-in 220ms ease both;
+      }
+      .phonetics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 30px;
+        margin-bottom: 18px;
+      }
+      .phonetics p {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 750;
+      }
+      .phonetics span {
+        margin-right: 8px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .definitions { display: grid; gap: 10px; }
+      .definition {
+        display: grid;
+        grid-template-columns: 50px 1fr;
+        gap: 14px;
+      }
+      .definition > span {
+        padding-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 750;
+      }
+      .definition p {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 650;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+      .definition .english {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .fixed-actions {
+        position: fixed;
+        z-index: 20;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        min-height: 208px;
+        padding: 12px max(24px, calc((100vw - 1440px) / 2));
+        border-top: 2px solid var(--black);
+        background: var(--white);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .fixed-actions button {
+        min-height: 82px;
+        border: 2px solid var(--black);
+        border-radius: 999px;
+        background: var(--white);
+        padding: 10px 24px;
+        font-size: clamp(26px, 3.2vw, 46px);
+        font-weight: 800;
+        letter-spacing: -.06em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 90ms ease;
+      }
+      .fixed-actions button:active:not(:disabled) { transform: scale(.985); }
+      .fixed-actions button:disabled {
+        color: #aaa;
+        border-color: #aaa;
+        cursor: default;
+      }
+      .done {
+        min-height: clamp(340px, 52vh, 600px);
+        padding: 64px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      .done h1 {
+        margin: 0;
+        font-size: clamp(48px, 8vw, 104px);
+        font-weight: 950;
+        line-height: .9;
+        letter-spacing: -.09em;
+      }
+      .done p {
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .notice {
+        position: fixed;
+        z-index: 30;
+        top: 50%;
+        left: 50%;
+        width: min(680px, calc(100vw - 48px));
+        border: 0;
+        background: transparent;
+        color: var(--black);
+        padding: 10px 0;
+        font-size: 18px;
+        font-weight: 850;
+        line-height: 1.45;
+        text-align: center;
+        transform: translate(-50%, -50%);
+      }
+      .notice.error {
+        color: var(--black);
+      }
+      @keyframes strike-draw {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+      }
+      @keyframes gray-fade {
+        from { color: var(--black); }
+        to { color: #777; }
+      }
+      @keyframes details-in {
+        from { opacity: 0; transform: translateY(7px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @media (max-width: 760px) {
+        .topbar, .page { width: min(100% - 32px, 1440px); }
+        .topbar { min-height: 72px; }
+        .brand { font-size: 21px; }
+        .topbar-action { padding: 10px 16px; font-size: 13px; }
+        .list-row {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 17px;
+        }
+        .list-title h2 { max-width: calc(100vw - 32px); }
+        .list-actions { justify-content: flex-start; }
+        .list-actions button { min-height: 38px; padding-inline: 12px; }
+        .workspace-top { gap: 10px; }
+        .back-button, .produce-button, .mode-button { font-size: 12px; }
+        .word-area { min-height: 45svh; padding: 48px 4px 32px; }
+        .word { font-size: clamp(58px, 18vw, 108px); }
+        .details-panel { margin-top: 30px; }
+        .fixed-actions {
+          min-height: 178px;
+          padding: 9px 12px;
+          gap: 8px;
+        }
+        .fixed-actions button {
+          min-height: 70px;
+          font-size: 32px;
+        }
+        .workspace-page { padding-bottom: 220px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: .01ms !important;
+          transition-duration: .01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <input id="file-input" class="hidden-input" type="file" accept=".json,application/json">
+    <noscript>请启用 JavaScript 后使用词表速筛。</noscript>
+    <script>
+      (() => {
+        "use strict";
+
+        const STORAGE_KEY = "word-sieve.static.v2";
+        const app = document.getElementById("app");
+        const fileInput = document.getElementById("file-input");
+        const state = {
+          lists: loadLists(),
+          screen: "list",
+          mode: "",
+          listId: "",
+          index: 0,
+          details: false,
+          marking: "",
+          markToken: 0,
+          notice: "",
+          error: "",
+          noticeTimer: 0
+        };
+
+        function isObject(value) {
+          return value !== null && typeof value === "object" && !Array.isArray(value);
+        }
+
+        function text(value) {
+          return typeof value === "string" ? value.trim() : "";
+        }
+
+        function clone(value) {
+          return JSON.parse(JSON.stringify(value));
+        }
+
+        function escapeHTML(value) {
+          return String(value == null ? "" : value).replace(/[&<>"']/g, (character) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "\"": "&quot;",
+            "'": "&#39;"
+          })[character]);
+        }
+
+        function uid() {
+          if (window.crypto && typeof window.crypto.randomUUID === "function") {
+            return window.crypto.randomUUID();
+          }
+          return "list-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+        }
+
+        function normalizeList(list) {
+          if (!isObject(list) || !Array.isArray(list.records)) return null;
+          const records = list.records.filter((record) => isObject(record));
+          const statuses = Array.isArray(list.statuses)
+            ? records.map((_, index) => list.statuses[index] === "keep" || list.statuses[index] === "crossed" ? list.statuses[index] : "")
+            : records.map(() => "");
+          const cursor = Number.isInteger(list.cursor)
+            ? Math.max(0, Math.min(list.cursor, records.length))
+            : 0;
+          return {
+            id: text(list.id) || uid(),
+            name: text(list.name) || "未命名词表.json",
+            records,
+            shape: isObject(list.shape) ? list.shape : { kind: "ndjson" },
+            statuses,
+            cursor,
+            updatedAt: text(list.updatedAt) || new Date().toISOString()
+          };
+        }
+
+        function loadLists() {
+          try {
+            const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "{}");
+            return Array.isArray(saved.lists)
+              ? saved.lists.map(normalizeList).filter(Boolean)
+              : [];
+          } catch (error) {
+            return [];
+          }
+        }
+
+        function saveLists() {
+          try {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ lists: state.lists }));
+            return true;
+          } catch (error) {
+            showNotice("浏览器无法保存本地进度。", true);
+            return false;
+          }
+        }
+
+        function getList() {
+          return state.lists.find((list) => list.id === state.listId) || null;
+        }
+
+        function getEntryContent(record) {
+          const outer = isObject(record.content) ? record.content : {};
+          const word = isObject(outer.word) ? outer.word : {};
+          return isObject(word.content) ? word.content : {};
+        }
+
+        function getHeadword(record) {
+          const outer = isObject(record.content) ? record.content : {};
+          const word = isObject(outer.word) ? outer.word : {};
+          return text(record.headWord) || text(word.wordHead) || text(record.word) || text(record.name) || "未命名单词";
+        }
+
+        function getDetails(record) {
+          const content = getEntryContent(record);
+          const uk = text(content.ukphone);
+          const us = text(content.usphone);
+          const fallbackPhone = text(content.phone) || text(record.phonetic);
+          const translations = Array.isArray(content.trans) ? content.trans : [];
+          const definitions = translations
+            .filter(isObject)
+            .map((item) => ({
+              pos: text(item.pos),
+              chinese: text(item.tranCn),
+              english: text(item.tranOther)
+            }))
+            .filter((item) => item.chinese || item.english);
+          if (!definitions.length) {
+            const fallback = text(record.translation) || text(record.definition) || text(record.meaning);
+            if (fallback) definitions.push({ pos: "", chinese: fallback, english: "" });
+          }
+          return { uk: uk || (!us ? fallbackPhone : ""), us, definitions };
+        }
+
+        function phone(value) {
+          if (!value) return "—";
+          return value.charAt(0) === "/" && value.charAt(value.length - 1) === "/" ? value : "/" + value + "/";
+        }
+
+        function detailsMarkup(record) {
+          const details = getDetails(record);
+          const definitions = details.definitions.length
+            ? details.definitions.map((item) =>
+                '<div class="definition"><span>' + escapeHTML(item.pos || "释义") + '</span><div>' +
+                (item.chinese ? '<p>' + escapeHTML(item.chinese) + '</p>' : "") +
+                (item.english ? '<p class="english">' + escapeHTML(item.english) + '</p>' : "") +
+                '</div></div>'
+              ).join("")
+            : '<p class="definition">该词条未提供释义。</p>';
+          return '<div class="phonetics">' +
+            '<p><span>英</span>' + escapeHTML(phone(details.uk)) + '</p>' +
+            '<p><span>美</span>' + escapeHTML(phone(details.us)) + '</p>' +
+            '</div><div class="definitions">' + definitions + '</div>';
+        }
+
+        function parseWordList(raw) {
+          const source = raw.replace(/^\uFEFF/, "").trim();
+          if (!source) throw new Error("这个文件是空的。");
+          try {
+            const parsed = JSON.parse(source);
+            if (Array.isArray(parsed)) {
+              const records = parsed.filter(isObject);
+              if (records.length !== parsed.length) throw new Error("词表数组中包含非对象条目。");
+              return { records, shape: { kind: "array" } };
+            }
+            if (!isObject(parsed)) throw new Error("JSON 顶层需要是词条对象或词条数组。");
+            for (const key of ["words", "items", "entries", "data"]) {
+              if (!Array.isArray(parsed[key])) continue;
+              const records = parsed[key].filter(isObject);
+              if (records.length !== parsed[key].length) throw new Error("词表数组中包含非对象条目。");
+              return { records, shape: { kind: "wrapper", key, value: clone(parsed) } };
+            }
+            return { records: [parsed], shape: { kind: "single" } };
+          } catch (wholeFileError) {
+            const lines = source.split(/\r?\n/).filter((line) => line.trim());
+            if (lines.length <= 1) {
+              throw wholeFileError instanceof Error ? wholeFileError : new Error("无法读取这个 JSON 文件。");
+            }
+            const records = lines.map((line, index) => {
+              try {
+                const record = JSON.parse(line);
+                if (!isObject(record)) throw new Error("不是词条对象");
+                return record;
+              } catch (error) {
+                throw new Error("第 " + (index + 1) + " 行不是有效的 JSON 词条。");
+              }
+            });
+            return { records, shape: { kind: "ndjson" } };
+          }
+        }
+
+        function serializeWordList(records, shape) {
+          if (shape.kind === "ndjson") {
+            return records.map((record) => JSON.stringify(record)).join("\n") + "\n";
+          }
+          if (shape.kind === "single") return JSON.stringify(records[0] || {}, null, 2);
+          if (shape.kind === "wrapper") {
+            return JSON.stringify(Object.assign({}, shape.value, { [shape.key]: records }), null, 2);
+          }
+          return JSON.stringify(records, null, 2);
+        }
+
+        function stem(name) {
+          return name.replace(/\.json$/i, "");
+        }
+
+        function displayName(name) {
+          return stem(text(name) || "未命名词表.json");
+        }
+
+        function renameList(id) {
+          const list = state.lists.find((item) => item.id === id);
+          if (!list) return;
+          const current = displayName(list.name);
+          const entered = window.prompt("重命名词表", current);
+          if (entered === null) return;
+          const clean = text(entered).replace(/\.json$/i, "").trim();
+          if (!clean) {
+            showNotice("词表名称不能为空。", true);
+            return;
+          }
+          const nextName = clean + ".json";
+          const duplicate = state.lists.some(
+            (item) => item.id !== id && item.name.toLowerCase() === nextName.toLowerCase(),
+          );
+          if (duplicate) {
+            showNotice("已经有同名词表。", true);
+            return;
+          }
+          list.name = nextName;
+          list.updatedAt = new Date().toISOString();
+          saveLists();
+          render();
+          showNotice("已重命名为：" + clean);
+        }
+
+        function deleteList(id) {
+          const index = state.lists.findIndex((item) => item.id === id);
+          if (index < 0) return;
+          const list = state.lists[index];
+          if (!window.confirm("确定删除“" + displayName(list.name) + "”吗？")) return;
+          state.lists.splice(index, 1);
+          saveLists();
+          render();
+          showNotice("已删除：" + displayName(list.name));
+        }
+
+        function uniqueName(name) {
+          const names = new Set(state.lists.map((list) => list.name));
+          if (!names.has(name)) return name;
+          const base = stem(name);
+          let number = 2;
+          while (names.has(base + " (" + number + ").json")) number += 1;
+          return base + " (" + number + ").json";
+        }
+
+        function downloadList(list, filename) {
+          const output = serializeWordList(list.records, list.shape);
+          const blob = new Blob([output], { type: "application/json;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = filename || list.name;
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
+
+        function showNotice(message, isError) {
+          window.clearTimeout(state.noticeTimer);
+          state.notice = isError ? "" : message;
+          state.error = isError ? message : "";
+          state.noticeTimer = window.setTimeout(() => {
+            state.notice = "";
+            state.error = "";
+            render();
+          }, 3000);
+          render();
+        }
+
+        function renderToast() {
+          if (state.error) return '<div class="notice error" data-action="dismiss" role="alert">' + escapeHTML(state.error) + '</div>';
+          if (state.notice) return '<div class="notice" data-action="dismiss" role="status">' + escapeHTML(state.notice) + '</div>';
+          return "";
+        }
+
+        function renderList() {
+          const rows = state.lists
+            .slice()
+            .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+            .map((list) => {
+              const kept = list.statuses.filter((status) => status === "keep").length;
+              const crossed = list.statuses.filter((status) => status === "crossed").length;
+              return '<article class="list-row" data-list-id="' + escapeHTML(list.id) + '">' +
+                '<div class="list-title"><button class="list-name-button" data-action="rename" title="重命名词表">' + escapeHTML(displayName(list.name)) + '</button>' +
+                '<p class="list-meta">' + list.records.length.toLocaleString("zh-CN") + ' 词' +
+                (kept || crossed ? ' · 保留 ' + kept + ' · 划掉 ' + crossed : "") + '</p></div>' +
+                '<div class="list-actions">' +
+                '<button data-action="copy">创建副本</button>' +
+                '<button data-action="edit">编辑</button>' +
+                '<button data-action="browse">浏览</button>' +
+                '<button data-action="export">导出</button>' +
+                '<button class="delete-action" data-action="delete">删除</button>' +
+                '</div></article>';
+            }).join("");
+          return '<div class="shell"><header class="topbar"><button class="brand" data-action="home">词表速筛</button>' +
+            '<button class="topbar-action" data-action="import">导入</button></header>' +
+            '<main class="page">' +
+            (rows ? '<section class="list">' + rows + '</section>' :
+              '<section class="empty"><p>暂无词表</p></section>') +
+            '</main>' + renderToast() + '</div>';
+        }
+
+        function currentWordClass(list) {
+          const status = list && list.statuses[state.index] ? list.statuses[state.index] : "";
+          const classes = ["word"];
+          if (status === "keep") classes.push("is-kept");
+          if (status === "crossed") classes.push("is-crossed");
+          if (state.marking === "crossed" && status === "crossed") classes.push("is-animating");
+          return classes.join(" ");
+        }
+
+        function renderWorkspace() {
+          const list = getList();
+          if (!list) {
+            state.screen = "list";
+            return renderList();
+          }
+          const isEdit = state.mode === "edit";
+          const done = isEdit && state.index >= list.records.length;
+          const current = done ? null : list.records[state.index];
+          const count = list.records.length;
+          const position = done ? count : state.index;
+          const percentage = count ? Math.min((position / count) * 100, 100) : 0;
+          const rangeMax = Math.max(count - 1, 1);
+          const progressName = escapeHTML(displayName(list.name));
+          const progress = isEdit
+            ? '<div class="progress-line"><p class="progress-name">' + progressName + '</p><p><strong>' + Math.min(state.index + 1, count) + '</strong> / ' + count + '</p></div>' +
+              '<div class="progress-track"><span style="width:' + percentage + '%"></span></div>'
+            : '<div class="progress-line range-wrap"><span class="progress-name">' + progressName + '</span><input id="browse-range" type="range" min="0" max="' + rangeMax + '" value="' + Math.min(state.index, rangeMax) + '"' + (count <= 1 ? " disabled" : "") + '><span id="range-count">' + (state.index + 1) + ' / ' + count + '</span></div>';
+          const topRight = isEdit
+            ? '<button class="produce-button" data-action="produce">产出新词表</button>'
+            : '<button class="mode-button" data-action="edit-from-browse">编辑</button>';
+          const wordContent = done
+            ? '<section class="done"><h1>已完成标记</h1><p>可以产出新词表，或点“上个”检查标记。</p></section>'
+            : '<section class="word-area"><div class="word-wrap"><h1 id="current-word" class="' + currentWordClass(list) + '">' + escapeHTML(getHeadword(current)) + '</h1></div>' +
+              '<div id="definition-panel" class="details-panel"' + (state.details ? "" : " hidden") + '>' + (state.details ? detailsMarkup(current) : "") + '</div></section>';
+          const previousDisabled = done || state.index <= 0 || state.marking;
+          const detailsDisabled = done || state.marking || state.details;
+          const fixed = isEdit
+            ? '<div class="fixed-actions"><button data-action="previous"' + (previousDisabled ? " disabled" : "") + '>上个</button><button data-action="details"' + (detailsDisabled ? " disabled" : "") + '>详情</button><button data-action="keep"' + (done || state.marking ? " disabled" : "") + '>保留</button><button data-action="cross"' + (done || state.marking ? " disabled" : "") + '>去掉</button></div>'
+            : "";
+          return '<div class="shell"><main class="page workspace-page"><div class="workspace-top"><button class="back-button" data-action="back">退出</button>' + topRight + '</div>' +
+            '<section class="progress-area">' + progress + '</section>' + wordContent + '</main>' + fixed + renderToast() + '</div>';
+        }
+
+        function render() {
+          app.innerHTML = state.screen === "list" ? renderList() : renderWorkspace();
+          wire();
+        }
+
+        function syncWordEffect() {
+          const list = getList();
+          const word = document.getElementById("current-word");
+          if (!list || !word) return;
+          word.className = currentWordClass(list);
+        }
+
+        function updateBrowsePreview() {
+          const list = getList();
+          if (!list || state.mode !== "browse") return;
+          const record = list.records[state.index];
+          const word = document.getElementById("current-word");
+          const panel = document.getElementById("definition-panel");
+          const count = document.getElementById("range-count");
+          if (!record || !word) return;
+          word.textContent = getHeadword(record);
+          word.className = currentWordClass(list);
+          if (panel) panel.innerHTML = state.details ? detailsMarkup(record) : "";
+          if (panel) panel.hidden = !state.details;
+          if (count) count.textContent = (state.index + 1) + " / " + list.records.length;
+        }
+
+        function setMode(id, mode) {
+          const list = state.lists.find((item) => item.id === id);
+          if (!list || !list.records.length) {
+            showNotice("这个词表没有词条。", true);
+            return;
+          }
+          state.listId = id;
+          state.mode = mode;
+          state.screen = "workspace";
+          state.index = mode === "edit" ? Math.min(list.cursor, list.records.length) : 0;
+          state.details = false;
+          state.marking = "";
+          state.markToken += 1;
+          render();
+        }
+
+        function markCurrent(status) {
+          const list = getList();
+          if (!list || state.mode !== "edit" || state.marking || state.index >= list.records.length) return;
+          const markedIndex = state.index;
+          list.statuses[markedIndex] = status;
+          list.updatedAt = new Date().toISOString();
+          list.cursor = markedIndex + 1;
+          state.details = false;
+          state.marking = status;
+          const markToken = ++state.markToken;
+          saveLists();
+          render();
+          window.setTimeout(() => {
+            if (state.listId !== list.id || state.mode !== "edit" || state.marking !== status || state.markToken !== markToken) return;
+            state.index = markedIndex + 1;
+            state.marking = "";
+            render();
+          }, status === "crossed" ? 100 : 60);
+        }
+
+        function previousWord() {
+          const list = getList();
+          if (!list || state.marking || state.index <= 0) return;
+          state.index -= 1;
+          if (state.mode === "edit") {
+            list.cursor = state.index;
+            list.updatedAt = new Date().toISOString();
+            saveLists();
+          }
+          state.details = false;
+          render();
+        }
+
+        function produceList() {
+          const list = getList();
+          if (!list) return;
+          const records = list.records.filter((record, index) => list.statuses[index] === "keep");
+          if (!records.length) {
+            showNotice("请先标记至少一个“保留”的词。", true);
+            return;
+          }
+          const output = {
+            id: uid(),
+            name: uniqueName(stem(list.name) + "-新词表.json"),
+            records: clone(records),
+            shape: clone(list.shape),
+            statuses: records.map(() => ""),
+            cursor: 0,
+            updatedAt: new Date().toISOString()
+          };
+          state.lists.unshift(output);
+          saveLists();
+          downloadList(output, output.name);
+          state.screen = "list";
+          state.mode = "";
+          state.listId = "";
+          state.marking = "";
+          state.markToken += 1;
+          showNotice("已产出新词表：" + output.name);
+        }
+
+        function createCopy() {
+          const source = getList();
+          if (!source) return;
+          const copy = {
+            id: uid(),
+            name: uniqueName(stem(source.name) + " 副本.json"),
+            records: clone(source.records),
+            shape: clone(source.shape),
+            statuses: source.records.map(() => ""),
+            cursor: 0,
+            updatedAt: new Date().toISOString()
+          };
+          state.lists.unshift(copy);
+          saveLists();
+          showNotice("已创建副本：" + copy.name);
+        }
+
+        function importFile(file) {
+          if (!file) return;
+          if (!/\.json$/i.test(file.name)) {
+            showNotice("请选择 .json 词表文件。", true);
+            return;
+          }
+          file.text().then((raw) => {
+            const imported = parseWordList(raw);
+            if (!imported.records.length) throw new Error("词表中没有可用词条。");
+            const list = {
+              id: uid(),
+              name: uniqueName(file.name),
+              records: imported.records,
+              shape: imported.shape,
+              statuses: imported.records.map(() => ""),
+              cursor: 0,
+              updatedAt: new Date().toISOString()
+            };
+            state.lists.unshift(list);
+            saveLists();
+            state.screen = "list";
+            state.mode = "";
+            state.listId = "";
+            render();
+            showNotice("已导入：" + list.name);
+          }).catch((error) => {
+            showNotice(error && error.message ? error.message : "无法读取这个词表。", true);
+          });
+        }
+
+        function handleAction(action, element) {
+          const row = element.closest("[data-list-id]");
+          const id = row ? row.getAttribute("data-list-id") : state.listId;
+          if (action === "import") {
+            fileInput.value = "";
+            fileInput.click();
+          } else if (action === "home" || action === "back") {
+            state.screen = "list";
+            state.mode = "";
+            state.listId = "";
+            state.marking = "";
+            state.markToken += 1;
+            render();
+          } else if (action === "copy") {
+            state.listId = id;
+            createCopy();
+          } else if (action === "rename") {
+            renameList(id);
+          } else if (action === "delete") {
+            deleteList(id);
+          } else if (action === "edit") {
+            setMode(id, "edit");
+          } else if (action === "browse") {
+            setMode(id, "browse");
+          } else if (action === "export") {
+            const list = state.lists.find((item) => item.id === id);
+            if (list) {
+              downloadList(list, list.name);
+              showNotice("已导出：" + displayName(list.name));
+            }
+          } else if (action === "produce") {
+            produceList();
+          } else if (action === "details") {
+            state.details = true;
+            render();
+          } else if (action === "keep") {
+            markCurrent("keep");
+          } else if (action === "cross") {
+            markCurrent("crossed");
+          } else if (action === "previous") {
+            previousWord();
+          } else if (action === "edit-from-browse") {
+            setMode(state.listId, "edit");
+          } else if (action === "dismiss") {
+            state.notice = "";
+            state.error = "";
+            render();
+          }
+        }
+
+        function wire() {
+          app.querySelectorAll("[data-action]").forEach((element) => {
+            element.addEventListener("click", () => handleAction(element.getAttribute("data-action"), element));
+            element.addEventListener("keydown", (event) => {
+              if ((event.key === "Enter" || event.key === " ") && element.getAttribute("data-action") === "details") {
+                event.preventDefault();
+                handleAction("details", element);
+              }
+            });
+          });
+          const range = document.getElementById("browse-range");
+          if (range) {
+            range.addEventListener("input", (event) => {
+              state.index = Number(event.target.value);
+              state.details = false;
+              updateBrowsePreview();
+            });
+          }
+        }
+
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (file) importFile(file);
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>
