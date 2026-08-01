@@ -1,6 +1,6 @@
-# 词表速筛
+# 词表速筛-即用
 
-浏览器打开vocabtrim.html即可开始使用
+浏览器打开vocabtrim-instant.html即可开始使用
 
 vocabtrim-ielts.html是已内置有道和新东方两个雅思词表的版本
 
